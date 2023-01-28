@@ -50,9 +50,12 @@ workflows:
     jobs:
       - build-image
       - deploy:
+          context:
+            - dockerhub
           filters:
             branches:
               # Only deploy to Docker Hub on a merge into main.
               only: main
-          context:
-            - dockerhub
+          requires:
+            - build-image
+
