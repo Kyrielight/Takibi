@@ -46,7 +46,9 @@ jobs:
 workflows:
   build:
     jobs:
-      - build-image
+      - build-image:
+          context:
+            - dockerhub
       - deploy:
           context:
             - dockerhub
