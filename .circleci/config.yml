@@ -38,7 +38,7 @@ jobs:
       - run:
           name: Build and Deploy Takibi
           command: |
-            echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u $"DOCKERHUB_USERNAME" --password-stdin
+            echo $DOCKERHUB_ACCESS_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
             docker buildx build -t $DOCKERHUB_USERNAME/takibi:latest --platform $PLATFORMS .
 
 # Invoke jobs via workflows
