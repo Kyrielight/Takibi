@@ -16,8 +16,6 @@ executors:
 jobs:
   build-image:
     executor: publisher
-    docker:
-      - image: cimg/base:stable
     steps:
       - setup_remote_docker:
           version: 20.10.11
@@ -33,14 +31,13 @@ jobs:
             docker buildx build --platform $PLATFORMS .
   deploy:
     executor: publisher
-    resource_class: small
     steps:
       - setup_remote_docker:
           version: 20.10.11
       - run:
           name: Build and Deploy Takibi
           command: |
-            echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u $"DOCKERHUB_USERNAME" --password-stdin
+            echo $DOCKERHUB_ACCESS_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
             docker buildx build -t $DOCKERHUB_USERNAME/takibi:latest --platform $PLATFORMS .
 
 # Invoke jobs via workflows
@@ -55,6 +52,7 @@ workflows:
           filters:
             branches:
               # Only deploy to Docker Hub on a merge into main.
+              # This does not block the merge and happens invisibly.
               only: main
           requires:
             - build-image
