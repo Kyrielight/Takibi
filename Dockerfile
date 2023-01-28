@@ -10,8 +10,16 @@ RUN echo ${TARGETARCH}
 
 WORKDIR /opt/takibi
 
-# Install OpenJDK
+# Install CircleCI image dependencies
 RUN apt update -y && apt install -y \
+    git \
+    ssh \
+    tar \
+    gzip \
+    ca-certificates
+
+# Install OpenJDK
+RUN apt install -y \
     apt-transport-https \
     build-essential \
     openjdk-11-jdk-headless \
