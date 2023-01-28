@@ -54,6 +54,7 @@ workflows:
           filters:
             branches:
               # Only deploy to Docker Hub on a merge into main.
+              # This does not block the merge and happens invisibly.
               only: main
           requires:
             - build-image
