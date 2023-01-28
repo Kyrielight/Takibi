@@ -21,12 +21,11 @@ jobs:
           version: 20.10.11
       - checkout
       - run:
-          echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u $"DOCKERHUB_USERNAME" --password-stdin
-#      - run:
-#          name: Prepare Buildx Context
-#          command: |
-##            docker context create buildx-build
-#            docker buildx create --use buildx-build
+          name: Prepare Buildx Context
+          command: |
+            docker context create buildx-build
+            docker buildx create --use buildx-build
+            echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u $"DOCKERHUB_USERNAME" --password-stdin
 #      - run:
 #          name: Build Takibi
 #          command: |
