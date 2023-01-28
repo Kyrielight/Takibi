@@ -1,0 +1,58 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/2.0/configuration-reference
+version: 2.1
+
+executors:
+  publisher:
+    environment:
+      IMAGE_NAME: takibi
+      PLATFORMS: linux/amd64,linux/arm64
+    docker:
+      - image: cimg/base:stable
+    resource_class: small
+
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+jobs:
+  build-image:
+    executor: publisher
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - setup_remote_docker:
+          version: 20.10.11
+      - checkout
+      - run:
+          name: Prepare Buildx Context
+          command: |
+            docker context create buildx-build
+            docker buildx create --use buildx-build
+      - run:
+          name: Build Takibi
+          command: |
+            docker buildx build --platform $PLATFORMS .
+  deploy:
+    executor: publisher
+    resource_class: small
+    steps:
+      - setup_remote_docker:
+          version: 20.10.11
+      - run:
+          name: Build and Deploy Takibi
+          command: |
+            echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u $"DOCKERHUB_USERNAME" --password-stdin
+            docker buildx build -t $DOCKERHUB_USERNAME/takibi:latest --platform $PLATFORMS .
+
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+workflows:
+  build:
+    jobs:
+      - build-image
+      - deploy:
+          filters:
+            branches:
+              # Only deploy to Docker Hub on a merge into main.
+              only: main
+          context:
+            - dockerhub
