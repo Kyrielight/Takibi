@@ -16,24 +16,23 @@ executors:
 jobs:
   build-image:
     executor: publisher
-    docker:
-      - image: cimg/base:stable
     steps:
       - setup_remote_docker:
           version: 20.10.11
       - checkout
       - run:
-          name: Prepare Buildx Context
-          command: |
-            docker context create buildx-build
-            docker buildx create --use buildx-build
-      - run:
-          name: Build Takibi
-          command: |
-            docker buildx build --platform $PLATFORMS .
+          echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u $"DOCKERHUB_USERNAME" --password-stdin
+#      - run:
+#          name: Prepare Buildx Context
+#          command: |
+##            docker context create buildx-build
+#            docker buildx create --use buildx-build
+#      - run:
+#          name: Build Takibi
+#          command: |
+#            docker buildx build --platform $PLATFORMS .
   deploy:
     executor: publisher
-    resource_class: small
     steps:
       - setup_remote_docker:
           version: 20.10.11
