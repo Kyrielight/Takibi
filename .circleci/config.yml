@@ -2,6 +2,23 @@
 # See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
 
+commands:
+  prepare_context:
+    description: "Prepares BuildX context"
+    steps:
+      - run: |
+          docker context create buildx-build
+          docker buildx create --use buildx-build
+  dockerhub_login:
+    description: "Logs into DockerHub"
+    parameters:
+      username:
+        type: string
+      token:
+        type: string
+    steps:
+      - run: echo << parameters.token >> | docker login -u << parameters.username >> --password-stdin
+
 executors:
   publisher:
     environment:
@@ -14,46 +31,47 @@ executors:
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  build-image:
+  build_image:
     executor: publisher
     steps:
       - setup_remote_docker:
           version: 20.10.11
       - checkout
-      - run:
-          name: Prepare Buildx Context
-          command: |
-            docker context create buildx-build
-            docker buildx create --use buildx-build
+      - prepare_context
       - run:
           name: Build Takibi
-          command: |
-            docker buildx build --platform $PLATFORMS .
-  deploy:
+          command: docker buildx build --platform $PLATFORMS .
+
+  build_image_and_push:
     executor: publisher
     steps:
       - setup_remote_docker:
           version: 20.10.11
+      - checkout
+      - prepare_context
+      - dockerhub_login:
+          username: $DOCKERHUB_USERNAME
+          token: $DOCKERHUB_ACCESS_TOKEN
       - run:
           name: Build and Deploy Takibi
-          command: |
-            echo $DOCKERHUB_ACCESS_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
-            docker buildx build -t $DOCKERHUB_USERNAME/takibi:latest --platform $PLATFORMS .
+          command: docker buildx build -t $DOCKERHUB_USERNAME/takibi:latest --platform $PLATFORMS .
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
   build:
     jobs:
-      - build-image
-      - deploy:
+      - build_image
+    when:
+      not: 
+        equal: [ main, << pipeline.git.branch >> ]
+  deploy:
+    jobs:
+      - build_image_and_push:
           context:
             - dockerhub
-          filters:
-            branches:
-              # Only deploy to Docker Hub on a merge into main.
-              # This does not block the merge and happens invisibly.
-              only: main
-          requires:
-            - build-image
-
+    # Only deploy to Docker Hub on a merge into main.
+    # This does not block the merge and happens invisibly.
+    when:
+      and:
+        - equal: [ main, << pipeline.git.branch >> ]
