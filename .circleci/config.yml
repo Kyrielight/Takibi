@@ -25,11 +25,10 @@ jobs:
           command: |
             docker context create buildx-build
             docker buildx create --use buildx-build
-            echo $DOCKERHUB_ACCESS_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
-#      - run:
-#          name: Build Takibi
-#          command: |
-#            docker buildx build --platform $PLATFORMS .
+      - run:
+          name: Build Takibi
+          command: |
+            docker buildx build --platform $PLATFORMS .
   deploy:
     executor: publisher
     steps:
@@ -46,9 +45,7 @@ jobs:
 workflows:
   build:
     jobs:
-      - build-image:
-          context:
-            - dockerhub
+      - build-image
       - deploy:
           context:
             - dockerhub
